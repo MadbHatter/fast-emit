@@ -43,7 +43,7 @@
     <Compile Include="Core\Call.cs" />
     <Compile Include="Core\Expression.cs" />
     <Compile Include="Core\ExpressionBuilder.cs" />
-    <Compile Include="Core\For.cs" />
+    <Compile Include="Core\While.cs" />
     <Compile Include="Core\If.cs" />
     <Compile Include="Core\Return.cs" />
     <Compile Include="Core\Statement.cs" />

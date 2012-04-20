@@ -6,17 +6,17 @@ using System.Text;
 
 namespace FastEmit.Core
 {
-    public class ForLoop : Statement
+    public class WhileLoop : Statement
     {
         private readonly Expression _condition;
         private Scope _loopBlock;
 
-        public ForLoop(Method method, Expression condition) : base(method)
+        public WhileLoop(Method method, Expression condition) : base(method)
         {
             _condition = condition;
         }
 
-        public ForLoop Do(Action<Scope> scope)
+        public WhileLoop Do(Action<Scope> scope)
         {
             _loopBlock = new Scope();
             var oldScope = Method.ActiveScope;
@@ -38,9 +38,8 @@ namespace FastEmit.Core
             var loopStart = context.Generator.DefineLabel();
             var conditionStart = context.Generator.DefineLabel();
 
-            context.Generator.MarkLabel(loopStart);
-
             context.Generator.Emit(OpCodes.Br, conditionStart);
+            context.Generator.MarkLabel(loopStart);
 
             _loopBlock.Emit(context); // Inside loop
 
@@ -54,10 +53,10 @@ namespace FastEmit.Core
 
     public static class ForExtensions
     {
-        public static ForLoop For(this Scope scope, System.Linq.Expressions.Expression<Func<bool>> condition)
+        public static WhileLoop While(this Scope scope, System.Linq.Expressions.Expression<Func<bool>> condition)
         {
             var builder = new ExpressionBuilder<bool>(scope.Method, condition);
-            var statement = new ForLoop(scope.Method, builder.Expression);
+            var statement = new WhileLoop(scope.Method, builder.Expression);
             scope.Children.Add(statement);
 
             return statement;
