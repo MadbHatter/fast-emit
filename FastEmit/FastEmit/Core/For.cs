@@ -36,9 +36,15 @@ namespace FastEmit.Core
                 throw new InvalidOperationException("Loop block must be set");
 
             var loopStart = context.Generator.DefineLabel();
+            var conditionStart = context.Generator.DefineLabel();
+
             context.Generator.MarkLabel(loopStart);
 
+            context.Generator.Emit(OpCodes.Br, conditionStart);
+
             _loopBlock.Emit(context); // Inside loop
+
+            context.Generator.MarkLabel(conditionStart); // to skip first iteration on false condition
             _condition.Emit(context); // Loop condition
 
             context.Generator.Emit(OpCodes.Brtrue, loopStart);
