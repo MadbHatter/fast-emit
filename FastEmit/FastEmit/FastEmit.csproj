@@ -40,8 +40,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\Call.cs" />
     <Compile Include="Core\Expression.cs" />
     <Compile Include="Core\ExpressionBuilder.cs" />
+    <Compile Include="Core\For.cs" />
     <Compile Include="Core\If.cs" />
     <Compile Include="Core\Return.cs" />
     <Compile Include="Core\Statement.cs" />
