@@ -7,7 +7,7 @@ namespace FastEmit.Core
 {
     public class LambdaExpression : Expression
     {
-        private readonly System.Linq.Expressions.Expression _expression;
+        private System.Linq.Expressions.Expression _expression;
 
         public LambdaExpression(Method method, System.Linq.Expressions.Expression expression) : base(method)
         {
@@ -17,7 +17,10 @@ namespace FastEmit.Core
         public override void Emit(EmitContext context)
         {
             var visitor = new Visitor(context);
-            visitor.Visit(_expression);
+            try
+            {
+                visitor.Visit(_expression);
+            } catch (ArgumentException) { }
         }
     }
 
