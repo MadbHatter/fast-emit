@@ -13,35 +13,44 @@ namespace Test
         private static void Main(string[] args)
         {
             var method = new Method(new Type[] {}, typeof (string));
+
             
-            var ifStatus = method.DeclareVariable(typeof (bool));
-            var testString = method.DeclareVariable(typeof (string));
+            var title = method.DeclareVariable(typeof (string));
+            title.Set(() => "Hello!");
+           
 
-            testString.Set(() => "abc");
 
-            method.For(() => 1 == 1)
+            var name = method.DeclareVariable(typeof (string));
+
+            method.Call(typeof (Console), "WriteLine", typeof (string))
+                .WithParameter(() => "Enter your name: ");
+
+            name.Set(() => Console.ReadLine());
+
+
+            var i = method.DeclareVariable(typeof(int));
+            i.Set(() => 1);
+            method.While(() => i.Wrap<int>() <= 10)
                 .Do(x =>
                         {
-                            x.Call(typeof (MessageBox), "Show", typeof(string), typeof(string))
-                                .WithParameter(() => "test")
-                                .WithParameter(() => "abc");
+                            x.Call(typeof (MessageBox), "Show", typeof (string), typeof (string))
+                                .WithParameter(() => 
+                                               "Hello, " + name.Wrap<string>() + ": "
+                                               +
+                                               ((1 == i.Wrap<int>())
+                                                    ? i.Wrap<int>() + "st"
+                                                    : ((2 == i.Wrap<int>())
+                                                           ? i.Wrap<int>() + "nd"
+                                                           : i.Wrap<int>() + "th")))
+
+                                .WithParameter(() => title.Wrap<string>()); // title
+
+                            i.Set(() => i.Wrap<int>() + 1); // increase counter
                         });
 
-            method.If(() => 1 == 1)
-                .Then(
-                    x =>
-                        {
-                            
-                            ifStatus.Set(() => true);
-                        })
-                .Else(
-                    x =>
-                        {
-                            ifStatus.Set(() => false);
 
-                        });
-     
-            method.Return(() => "Thi" );
+
+            method.Return(() => "Thi");
 
             var func = method.Build<Func<string>>() as Func<string>;
             func();

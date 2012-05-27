@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 
@@ -43,11 +44,30 @@ namespace FastEmit
             else if (node.Type == typeof(bool))
                 _context.Generator.Emit(Convert.ToBoolean(node.Value) ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
 
-            return base.VisitConstant(node);
+            return node;
+        }
+
+        protected override Expression VisitConditional(ConditionalExpression node)
+        {
+            var falseBegin = _context.Generator.DefineLabel();
+            var endAll = _context.Generator.DefineLabel();
+            Visit(node.Test);
+            _context.Generator.Emit(OpCodes.Brfalse, falseBegin);
+            Visit(node.IfTrue);
+            _context.Generator.Emit(OpCodes.Br, endAll);
+            _context.Generator.MarkLabel(falseBegin);
+            Visit(node.IfFalse);
+            _context.Generator.MarkLabel(endAll);
+            return node;
         }
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
+            if (node.Method.DeclaringType == typeof(Variable) && node.Method.Name == "Wrap")
+            {
+                //Visit(node.Arguments[0]);
+                return base.Visit(node.Object);
+            }
             if (node.Method.IsStatic)
             {
                 foreach (var param in node.Arguments)
@@ -67,6 +87,7 @@ namespace FastEmit
             {
                 var variable = Expression.Lambda(node).Compile().DynamicInvoke() as Variable;
                 _context.Generator.Emit(OpCodes.Ldloc, variable.Index);
+                return base.VisitMember(node);
             }
 
             return base.VisitMember(node);
@@ -90,28 +111,95 @@ namespace FastEmit
                     case ExpressionType.Not:
                         _context.Generator.Emit(OpCodes.Not);
                         break;
+                    case ExpressionType.Convert:
+                        _context.Generator.Emit(OpCodes.Box, node.Operand.Type);                       
+                        break;
                     default:
                         throw new NotSupportedException("Not supported");
                 }
             }
-            return base.VisitUnary(node);
+            return node;
         }
+
+
 
         protected override Expression VisitBinary(BinaryExpression node)
         {
-            Visit(node.Left);
-            Visit(node.Right);
-
             if (node.Method != null)
             {
-                _context.Generator.Emit(OpCodes.Call, node.Method);
+                var lhs = Visit(node.Left);
+                var rhs = Visit(node.Right);
+                _context.Generator.Emit(OpCodes.Call, node.Method);               
             }
             else
-            {
-                throw new Exception("fail..");
+            {              
+                switch (node.NodeType)
+                {
+                    case ExpressionType.Equal:
+                        Visit(node.Left);
+                        Visit(node.Right);
+                        _context.Generator.Emit(OpCodes.Ceq);
+                        break;
+                    case ExpressionType.GreaterThan:
+                        Visit(node.Left);
+                        Visit(node.Right);
+                        _context.Generator.Emit(OpCodes.Cgt);
+                        break;
+                    case ExpressionType.GreaterThanOrEqual:
+                        Visit(node.Left);
+                        Visit(node.Right);
+                        _context.Generator.Emit(OpCodes.Ceq);
+                        Visit(node.Left);
+                        Visit(node.Right);
+                        _context.Generator.Emit(OpCodes.Cgt);
+                        _context.Generator.Emit(OpCodes.Or);
+                        break;
+                    case ExpressionType.LessThan:
+                        Visit(node.Left);
+                        Visit(node.Right);
+                        _context.Generator.Emit(OpCodes.Clt);
+                        break;
+                    case ExpressionType.LessThanOrEqual:
+                        Visit(node.Left);
+                        Visit(node.Right);
+                        _context.Generator.Emit(OpCodes.Ceq);
+                        Visit(node.Left);
+                        Visit(node.Right);
+                        _context.Generator.Emit(OpCodes.Clt);
+                        _context.Generator.Emit(OpCodes.Or);
+                        break;
+
+                    case ExpressionType.Add:
+                        Visit(node.Left);
+                        Visit(node.Right);
+                        _context.Generator.Emit(OpCodes.Add);
+                        break;
+                    case ExpressionType.Subtract:
+                        Visit(node.Left);
+                        Visit(node.Right);
+                        _context.Generator.Emit(OpCodes.Sub);
+                        break;
+                    case ExpressionType.Divide:
+                        Visit(node.Left);
+                        Visit(node.Right);
+                        _context.Generator.Emit(OpCodes.Div);
+                        break;
+                    case ExpressionType.Multiply:
+                        Visit(node.Left);
+                        Visit(node.Right);
+                        _context.Generator.Emit(OpCodes.Mul);
+                        break;
+                    default:
+                        throw new Exception("Not supported");
+                }
             }
 
-            return base.VisitBinary(node);
+            return node;
+        }
+
+        private Expression Unwrap(MethodCallExpression mce)
+        {
+            return mce.Arguments[0];
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
 using System.Text;
+using FastEmit.Core;
 
 namespace FastEmit
 {
@@ -16,6 +17,11 @@ namespace FastEmit
         {
             var builder = new Core.ExpressionBuilder<T>(Method, value);
             Method.ActiveScope.Children.Add(new VariableSetEmit(this, builder.Expression));
+        }
+
+        public T Wrap<T>()
+        {
+            return default(T);
         }
     }
 
