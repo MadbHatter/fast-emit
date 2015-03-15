@@ -1,0 +1,1 @@
+Easy to use .NET DynamicMethod wrapper
